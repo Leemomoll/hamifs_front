@@ -6,28 +6,17 @@
   --hamifs-header-height: 56px;
   --hamifs-tagsview-height: 40px;
 
-  /* 配色：浅灰侧栏 + 绿色主色 */
-  --hamifs-primary: #18a058;
-  --hamifs-sidebar-bg: rgba(247, 248, 250, 0.55);
+  /* 配色：浅灰侧栏 + 技术蓝主色 */
+  --hamifs-primary: #165dff;
+  --hamifs-sidebar-bg: #f7f8fa;
   --hamifs-sidebar-text: #5b6068;
-  --hamifs-sidebar-hover-bg: rgba(236, 238, 241, 0.6);
+  --hamifs-sidebar-hover-bg: #eceef1;
   --hamifs-sidebar-active-text: #ffffff;
 
-  /* 壁纸未加载 / 降级时的兜底底色 */
+  /* 主内容区底色 */
   --hamifs-bg-page: #f5f7f9;
-  /* 主内容区：极淡的一层玻璃，让壁纸透出来 */
-  --hamifs-bg-page-glass: rgba(245, 247, 249, 0.35);
-  --hamifs-bg-card: rgba(255, 255, 255, 0.72);
+  --hamifs-bg-card: #ffffff;
   --hamifs-border-color: #e5e6eb;
-
-  /* ===== 静态壁纸 ===== */
-  /* 壁纸地址：换壁纸只改这一处即可 */
-  --hamifs-wallpaper-url: url('/bg.jpg');
-  /* 壁纸遮罩：数值越大壁纸越淡、正文越清楚 */
-  --hamifs-bg-mask: rgba(255, 255, 255, 0.55);
-  /* 侧栏 / 顶栏 / 标签栏的毛玻璃底色与模糊强度 */
-  --hamifs-glass-panel: rgba(255, 255, 255, 0.62);
-  --hamifs-glass-blur: 12px;
 
   --hamifs-text-primary: #333639;
   --hamifs-text-regular: #606266;
@@ -38,55 +27,6 @@
 
   /* 侧栏收放动画：缓入缓出 + 稍长的时长，收起时"慢慢收回"更柔和 */
   --hamifs-sidebar-transition: 0.36s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ===== 侧边栏收放动画期间的降载 =====
-   实测（CDP，1440×900）：收放动画期间帧间隔中位数 16.7ms 正常，但 p95 高达
-   100~133ms，即每隔几帧掉 6~8 帧，就是肉眼看到的"顿一下"。对照实验结论：
-
-     · 只关全部毛玻璃        → p95 100ms，无改善（被下面那层的开销掩盖了，见后注）
-     · 只隐藏内容区          → p95 100ms，无改善
-     · 给壁纸层 will-change  → p95 150ms，更差
-     · 壁纸换成渐变(无位图)  → p95 100ms，无改善（不是图片解码开销）
-     · 只去掉两张全屏固定层  → p95 16.8ms，卡顿完全消失
-     · 上面两项叠加才是最终方案（去掉任一都会退回 ~150ms）
-
-   根因：壁纸层 + 遮罩层是两张全屏固定的半透明层，宽度动画每帧都要把它们连同
-   上层内容一起重新光栅化与混合。所以这里在动画期间把它们换掉，改由外层容器的
-   实色背景兜底。观感几乎无差别——遮罩本来就把壁纸压得很淡。
-
-   注意：下面 backdrop-filter 的写法不能换成"把 --hamifs-glass-blur 改成 0"。
-   blur(0px) 仍然保留在 backdrop-filter 的合成路径上，等于没省，必须显式 none。 */
-/* 注意：动画期间同时关掉毛玻璃是有必要的。单独看它收益为 0，是因为当时壁纸的
-   开销把其它开销全盖住了；壁纸解决后，这三层毛玻璃就是下一个瓶颈
-   （实测：保留这些规则 p95 16.8ms，去掉则回到 150ms）。
-   另外不能换成"把 --hamifs-glass-blur 改成 0"——blur(0px) 仍留在
-   backdrop-filter 的合成路径上，等于没省，必须显式 none。 */
-html.is-sidebar-animating .sidebar-container,
-html.is-sidebar-animating .header-container,
-html.is-sidebar-animating .tags-view-container {
-  backdrop-filter: none !important;
-}
-
-/* blur 关掉后底色要更实一点，否则文字压着壁纸会发花 */
-html.is-sidebar-animating .header-container,
-html.is-sidebar-animating .tags-view-container {
-  background-color: rgba(255, 255, 255, 0.86) !important;
-}
-
-html.is-sidebar-animating .sidebar-container {
-  background-color: rgba(247, 248, 250, 0.9) !important;
-}
-
-/* 动画期间摘掉两张全屏固定层（实测收益 p95 100ms → 16.8ms），
-   用外层容器的实色背景兜底，观感几乎无变化 */
-html.is-sidebar-animating .bg-wallpaper,
-html.is-sidebar-animating .bg-mask {
-  display: none;
-}
-
-html.is-sidebar-animating .app-wrapper {
-  background-color: var(--hamifs-bg-page);
 }
 
 * {

@@ -248,8 +248,7 @@ const handleCommand = command => {
   flex: 0 0 auto;
   height: var(--hamifs-header-height);
   padding: 0 16px;
-  background-color: var(--hamifs-glass-panel);
-  backdrop-filter: blur(var(--hamifs-glass-blur));
+  background-color: #ffffff;
   border-bottom: 1px solid var(--hamifs-border-color);
 }
 
@@ -333,8 +332,7 @@ const handleCommand = command => {
   width: 520px;
   max-width: calc(100vw - 32px);
   margin: 12vh auto 0;
-  background-color: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(var(--hamifs-glass-blur));
+  background-color: #ffffff;
   border: 1px solid var(--hamifs-border-color);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);

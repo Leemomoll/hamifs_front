@@ -126,8 +126,7 @@ const closeAllTags = () => {
   position: relative;
   flex: 0 0 auto;
   height: var(--hamifs-tagsview-height);
-  background-color: var(--hamifs-glass-panel);
-  backdrop-filter: blur(var(--hamifs-glass-blur));
+  background-color: #ffffff;
   border-bottom: 1px solid var(--hamifs-border-color);
 }
 

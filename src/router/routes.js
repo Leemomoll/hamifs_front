@@ -44,16 +44,15 @@ export const constantRoutes = [
     ],
   },
   {
-    path: '/list',
+    // 格式转换：独立页面，上传 → 选目标格式 → 任务列表 → 下载
+    path: '/convert',
     component: Layout,
-    redirect: '/list/basic',
-    meta: { title: '基础列表', icon: 'List' },
     children: [
       {
-        path: 'basic',
-        name: 'ListBasic',
-        component: () => import('@/views/list/basic.vue'),
-        meta: { title: '标准列表', icon: 'Tickets' },
+        path: 'index',
+        name: 'ConvertIndex',
+        component: () => import('@/views/convert/index.vue'),
+        meta: { title: '格式转换', icon: 'Switch' },
       },
     ],
   },
@@ -77,19 +76,19 @@ export const constantRoutes = [
         path: 'index',
         name: 'HamifsStorage',
         component: () => import('@/views/hamifs/storage.vue'),
-        meta: { title: 'Hamifs文件存储', icon: 'FolderOpened' },
+        meta: { title: '文档中心', icon: 'FolderOpened' },
       },
     ],
   },
   {
-    path: '/hamifs-share',
+    path: '/memo',
     component: Layout,
     children: [
       {
         path: 'index',
-        name: 'HamifsShare',
-        component: () => import('@/views/hamifs/share.vue'),
-        meta: { title: '多人共享文件', icon: 'Share' },
+        name: 'MemoIndex',
+        component: () => import('@/views/memo/index.vue'),
+        meta: { title: '备忘录', icon: 'EditPen' },
       },
     ],
   },

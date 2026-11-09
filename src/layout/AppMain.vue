@@ -27,11 +27,9 @@ const routeKey = computed(() => `${route.fullPath}_${appStore.refreshKey}`)
   flex: 1;
   min-height: 0;
   overflow: auto;
-  /* 把内容区的重绘/布局约束在这个盒子内，避免每次换页都触发整页
-     （尤其是多个 backdrop-filter 毛玻璃层）重新合成 */
+  /* 把内容区的重绘/布局约束在这个盒子内，避免每次换页都触发整页重新合成 */
   contain: layout paint;
-  /* 只留极淡一层，让壁纸透出来，同时保证裸文字可读 */
-  background-color: var(--hamifs-bg-page-glass);
+  background-color: var(--hamifs-bg-page);
 }
 
 .fade-transform-enter-active,

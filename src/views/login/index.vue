@@ -3,9 +3,16 @@
     <!-- 左侧：品牌视觉区（动画角色） -->
     <div class="left-panel">
       <div class="left-inner">
-        <div class="brand">
-          <img class="brand-logo" :src="logoUrl" alt="Hamifs" />
-          <span class="brand-name">Hamifs</span>
+        <div
+          class="brand"
+          @pointerdown="startLongPress"
+          @pointerup="cancelLongPress"
+          @pointerleave="cancelLongPress"
+          @pointercancel="cancelLongPress"
+          @contextmenu.prevent
+        >
+          <img class="brand-logo" :src="logoUrl" alt="hamifs" />
+          <span class="brand-name">hamifs</span>
         </div>
 
         <div class="characters-area">
@@ -33,8 +40,8 @@
     <div class="right-panel">
       <div class="form-wrapper">
         <div class="mobile-logo">
-          <img class="brand-logo" :src="logoUrl" alt="Hamifs" />
-          <span>Hamifs 平台</span>
+          <img class="brand-logo" :src="logoUrl" alt="hamifs" />
+          <span>hamifs</span>
         </div>
 
         <div class="form-header">
@@ -106,12 +113,12 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
 import AnimatedCharacters from '@/components/AnimatedCharacters/Index.vue'
-import logoUrl from '@/assets/logo.png'
+import logoUrl from '@/assets/logo.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -146,6 +153,35 @@ const rules = {
  * 正在输密码时整块视觉向右靠：左栏内容右移 + 分界线右移，
  * 配合角色动画（紫色角色起身遮挡）形成"凑过来看"的感觉
  */
+/**
+ * 长按通道（开发后门）：长按品牌区 1.2 秒免登录直接进系统。
+ * 配合鉴权开关关闭（VITE_AUTH_ENABLED=false）使用；不留任何视觉痕迹。
+ * 后端在线、鉴权开启时，守卫仍会正常拦截，该通道只对已登录/已放行状态有效。
+ */
+const LONG_PRESS_MS = 1200
+let longPressTimer = null
+
+const enterWithoutLogin = () => {
+  longPressTimer = null
+  // 与正常登录一致：优先回到被守卫拦下来的深链接
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  router.push(redirect || '/dashboard/index')
+}
+
+const startLongPress = () => {
+  cancelLongPress()
+  longPressTimer = setTimeout(enterWithoutLogin, LONG_PRESS_MS)
+}
+
+const cancelLongPress = () => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
+
+onBeforeUnmount(cancelLongPress)
+
 const isPeeking = computed(
   () => passwordFocused.value && form.password.length > 0 && !showPassword.value
 )
@@ -192,7 +228,7 @@ const handleLogin = async () => {
   min-width: 0;
   padding: 40px 48px 32px;
   overflow: hidden;
-  background: linear-gradient(145deg, #0f1f1a 0%, #123a2a 50%, #18a058 100%);
+  background: linear-gradient(145deg, #0a1633 0%, #123a8a 50%, #165dff 100%);
   transition: flex-grow 0.55s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
@@ -280,7 +316,7 @@ const handleLogin = async () => {
   right: 10%;
   width: 300px;
   height: 300px;
-  background: rgba(24, 160, 88, 0.28);
+  background: rgba(22, 93, 255, 0.28);
 }
 
 .decor-blur-2 {

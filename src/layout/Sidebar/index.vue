@@ -1,8 +1,8 @@
 <template>
   <div class="sidebar-container" :class="{ 'is-collapsed': isCollapsed }">
     <div class="sidebar-logo">
-      <img class="logo-img" :src="logoUrl" alt="Hamifs" />
-      <span class="logo-title">Hamifs Admin</span>
+      <img class="logo-img" :src="logoUrl" alt="hamifs" />
+      <span class="logo-title">hamifs</span>
     </div>
 
     <el-scrollbar class="sidebar-scrollbar">
@@ -32,7 +32,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/modules/app'
 import { constantRoutes } from '@/router/routes'
-import logoUrl from '@/assets/logo.png'
+import logoUrl from '@/assets/logo.svg'
 import SidebarItem from './SidebarItem.vue'
 
 const route = useRoute()
@@ -51,10 +51,6 @@ const COLLAPSE_LAYOUT_DELAY = 320
 const menuCollapsed = ref(appStore.sidebarCollapsed)
 let collapseTimer = null
 
-// 宽度动画进行中的标记：这段时间由全局样式把三层毛玻璃彻底停掉（见 styles/index.css）
-const resizing = ref(false)
-let resizeTimer = null
-
 watch(isCollapsed, collapsed => {
   clearTimeout(collapseTimer)
   if (collapsed) {
@@ -64,25 +60,10 @@ watch(isCollapsed, collapsed => {
   } else {
     menuCollapsed.value = false
   }
-
-  resizing.value = true
-  clearTimeout(resizeTimer)
-  // 略大于 CSS 里的 0.36s，等动画真正跑完再恢复毛玻璃
-  resizeTimer = setTimeout(() => {
-    resizing.value = false
-  }, 420)
-})
-
-// 动画期间给 <html> 挂标记：由全局样式停掉毛玻璃并摘掉全屏背景层。
-// 只关侧栏自己不够——顶栏和标签栏的宽度同样在逐帧变化，一起处理才有用。
-watch(resizing, active => {
-  document.documentElement.classList.toggle('is-sidebar-animating', active)
 })
 
 onBeforeUnmount(() => {
   clearTimeout(collapseTimer)
-  clearTimeout(resizeTimer)
-  document.documentElement.classList.remove('is-sidebar-animating')
 })
 </script>
 
@@ -92,8 +73,6 @@ onBeforeUnmount(() => {
   flex-direction: column;
   height: 100%;
   background-color: var(--hamifs-sidebar-bg);
-  /* 毛玻璃：模糊壁纸，保证菜单文字可读 */
-  backdrop-filter: blur(var(--hamifs-glass-blur));
   /* 用阴影画右侧分隔线，避免占用布局宽度影响折叠宽度 */
   box-shadow: 1px 0 0 0 var(--hamifs-border-color);
 }
@@ -164,8 +143,7 @@ onBeforeUnmount(() => {
 /* 折叠后悬浮弹出的子菜单：不能跟着透明，否则叠在内容上看不清 */
 :deep(.el-menu--popup-container),
 :deep(.el-menu--popup) {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(var(--hamifs-glass-blur));
+  background-color: #ffffff !important;
 }
 
 /* 浅色菜单 hover / active，主色统一为绿色 */
