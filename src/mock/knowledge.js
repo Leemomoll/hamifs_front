@@ -94,17 +94,21 @@ function buildSeed() {
       },
     ],
     memos: [
+      // type: 'memo' 备忘（默认） / 'todo' 待办（带 done 完成态） / 'journal' 手记
       {
         id: 'm_1',
-        title: '待办：买服务器',
+        type: 'todo',
+        title: '买服务器',
         content: '轻量云服务器 2C4G，一年一百多，部署 MySQL + MinIO + 前后端。',
         tags: ['部署'],
         pinned: true,
+        done: false,
         createdAt: t - 3600000,
         updatedAt: t - 1800000,
       },
       {
         id: 'm_2',
+        type: 'memo',
         title: '格式转换工具选型',
         content: 'LibreOffice headless 转 PDF 还原度最高；Pandoc 覆盖 md/html 互转；包一层 FastAPI 即可。',
         tags: ['工具', '开源'],
@@ -114,12 +118,34 @@ function buildSeed() {
       },
       {
         id: 'm_3',
+        type: 'journal',
         title: 'RAG 切块参数记录',
         content: 'chunk 512 字、overlap 64 字效果最好，等真实语料再调。',
         tags: ['AI'],
         pinned: false,
         createdAt: t - 4 * 86400000,
         updatedAt: t - 3 * 86400000,
+      },
+      {
+        id: 'm_4',
+        type: 'todo',
+        title: '主控台扇形图数据口径',
+        content: '按文档类型统计数量与体积，类型复用 resolveFileType 的口径。',
+        tags: ['前端'],
+        pinned: false,
+        done: true,
+        createdAt: t - 6 * 3600000,
+        updatedAt: t - 5 * 3600000,
+      },
+      {
+        id: 'm_5',
+        type: 'journal',
+        title: '周中手记',
+        content: '把待办、手记、备忘统一收进个人记事里，主控台只做汇总展示。',
+        tags: [],
+        pinned: false,
+        createdAt: t - 86400000,
+        updatedAt: t - 86400000,
       },
     ],
   }
@@ -130,13 +156,22 @@ function buildSeed() {
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) return normalize(JSON.parse(raw))
   } catch {
     localStorage.removeItem(STORE_KEY)
   }
   const seed = buildSeed()
   persist(seed)
   return seed
+}
+
+/** 老版本数据兼容：补齐备忘录的 type / done 字段 */
+function normalize(data) {
+  data.memos?.forEach(m => {
+    if (!m.type) m.type = 'memo'
+    if (m.type === 'todo' && typeof m.done !== 'boolean') m.done = false
+  })
+  return data
 }
 
 function persist(db) {
@@ -250,9 +285,18 @@ export function toggleStarDocument(id) {
 
 // ─── 备忘录 ──────────────────────────────────────────────────────────────────
 
-export function listMemos(keyword = '') {
+/**
+ * 备忘录列表（个人记事）。
+ * @param {{keyword?: string, type?: ''|'memo'|'todo'|'journal'}} query
+ * type 传空表示全部类型
+ */
+export function listMemos(query = {}) {
+  const { keyword = '', type = '' } = query
   return delay().then(() => {
     let list = clone(db.memos)
+    if (type) {
+      list = list.filter(m => m.type === type)
+    }
     if (keyword) {
       const kw = keyword.toLowerCase()
       list = list.filter(m => m.title.toLowerCase().includes(kw) || m.content.toLowerCase().includes(kw))
@@ -264,12 +308,15 @@ export function listMemos(keyword = '') {
 }
 
 export function addMemo(data = {}) {
+  const type = data.type || 'memo'
   const memo = {
     id: uid(),
+    type,
     title: data.title || '无标题备忘',
     content: data.content || '',
     tags: data.tags || [],
     pinned: false,
+    done: type === 'todo' ? false : undefined,
     createdAt: now(),
     updatedAt: now(),
   }

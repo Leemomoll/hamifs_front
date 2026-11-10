@@ -85,3 +85,14 @@ export function formatTime(ts) {
   const pad = n => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+
+/** 相对时间：刚刚 / n 分钟前 / n 小时前 / n 天前，超出 7 天回退日期 */
+export function formatRelativeTime(ts) {
+  if (!ts) return '-'
+  const diff = Date.now() - ts
+  if (diff < 60 * 1000) return '刚刚'
+  if (diff < 3600 * 1000) return `${Math.floor(diff / 60000)} 分钟前`
+  if (diff < 86400 * 1000) return `${Math.floor(diff / 3600000)} 小时前`
+  if (diff < 7 * 86400 * 1000) return `${Math.floor(diff / 86400000)} 天前`
+  return formatTime(ts).slice(0, 10)
+}

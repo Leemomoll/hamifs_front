@@ -57,14 +57,15 @@ export const constantRoutes = [
     ],
   },
   {
-    path: '/hamifs-table',
+    // 加工工厂：智能表格 / 表格 / 文档的新建与编辑（学企微文档的三段式结构）
+    path: '/factory',
     component: Layout,
     children: [
       {
         path: 'index',
-        name: 'HamifsTable',
-        component: () => import('@/views/hamifs/table.vue'),
-        meta: { title: 'Hamifs自用表格', icon: 'Grid' },
+        name: 'Factory',
+        component: () => import('@/views/factory/index.vue'),
+        meta: { title: 'Hamifs加工工厂', icon: 'Grid' },
       },
     ],
   },
@@ -76,11 +77,12 @@ export const constantRoutes = [
         path: 'index',
         name: 'HamifsStorage',
         component: () => import('@/views/hamifs/storage.vue'),
-        meta: { title: '文档中心', icon: 'FolderOpened' },
+        meta: { title: '文档存储中心', icon: 'FolderOpened' },
       },
     ],
   },
   {
+    // 个人记事：备忘 / 待办 / 手记统一入口，按 type 区分
     path: '/memo',
     component: Layout,
     children: [
@@ -88,19 +90,7 @@ export const constantRoutes = [
         path: 'index',
         name: 'MemoIndex',
         component: () => import('@/views/memo/index.vue'),
-        meta: { title: '备忘录', icon: 'EditPen' },
-      },
-    ],
-  },
-  {
-    path: '/heritage',
-    component: Layout,
-    children: [
-      {
-        path: 'index',
-        name: 'HeritageSecrets',
-        component: () => import('@/views/heritage/secrets.vue'),
-        meta: { title: '先辈秘籍', icon: 'Reading' },
+        meta: { title: '个人记事', icon: 'Notebook' },
       },
     ],
   },

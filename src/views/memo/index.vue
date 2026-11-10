@@ -2,10 +2,18 @@
   <div class="memo-page page-container">
     <!-- 左侧：备忘录列表 -->
     <aside class="memo-list-panel">
+      <div class="type-tabs">
+        <el-radio-group v-model="typeFilter" size="small">
+          <el-radio-button value="">全部</el-radio-button>
+          <el-radio-button value="memo">备忘</el-radio-button>
+          <el-radio-button value="todo">待办</el-radio-button>
+          <el-radio-button value="journal">手记</el-radio-button>
+        </el-radio-group>
+      </div>
       <div class="list-toolbar">
         <el-input
           v-model="keyword"
-          placeholder="搜索备忘录"
+          placeholder="搜索"
           clearable
           size="small"
           :prefix-icon="Search"
@@ -21,11 +29,18 @@
           v-for="memo in memos"
           :key="memo.id"
           class="memo-item"
-          :class="{ active: memo.id === activeId, pinned: memo.pinned }"
+          :class="{ active: memo.id === activeId, pinned: memo.pinned, done: memo.type === 'todo' && memo.done }"
           @click="selectMemo(memo.id)"
         >
           <div class="memo-item-top">
             <span class="memo-item-title">
+              <el-checkbox
+                v-if="memo.type === 'todo'"
+                class="todo-check"
+                :model-value="memo.done"
+                @click.stop
+                @change="handleToggleDone(memo)"
+              />
               <el-icon v-if="memo.pinned" class="pin-icon"><Top /></el-icon>
               {{ memo.title }}
             </span>
@@ -40,6 +55,9 @@
           </div>
           <div class="memo-item-content">{{ memo.content || '（无内容）' }}</div>
           <div class="memo-item-meta">
+            <el-tag v-if="memo.type !== 'memo'" size="small" :type="TYPE_TAG[memo.type]" effect="plain">
+              {{ TYPE_LABEL[memo.type] }}
+            </el-tag>
             <el-tag v-for="tag in memo.tags" :key="tag" size="small" type="info" effect="plain">
               {{ tag }}
             </el-tag>
@@ -49,7 +67,7 @@
 
         <el-empty
           v-if="!loading && !memos.length"
-          description="还没有备忘录"
+          :description="emptyText"
           :image-size="80"
         />
       </div>
@@ -65,6 +83,27 @@
           @input="markDirty"
         />
         <div class="editor-toolbar">
+          <el-select
+            v-model="draft.type"
+            class="editor-type"
+            size="small"
+            @change="markDirty"
+          >
+            <el-option
+              v-for="opt in TYPE_OPTIONS"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+          <el-checkbox
+            v-if="draft.type === 'todo'"
+            v-model="draft.done"
+            class="editor-done"
+            @change="markDirty"
+          >
+            标记完成
+          </el-checkbox>
           <el-select
             v-model="draft.tags"
             multiple
@@ -93,7 +132,7 @@
           type="textarea"
           :autosize="false"
           resize="none"
-          placeholder="记录重要信息…（支持 Markdown，编辑器后续升级为 vditor）"
+          placeholder="记录重要信息…（备忘 / 待办 / 手记统一存放，支持 Markdown）"
           @input="markDirty"
         />
         <div class="editor-footer">最后更新：{{ formatTime(activeMemo.updatedAt) }}</div>
@@ -115,11 +154,28 @@ const loading = ref(false)
 const saving = ref(false)
 const memos = ref([])
 const keyword = ref('')
+const typeFilter = ref('')
 const activeId = ref(null)
 const dirty = ref(false)
-const draft = reactive({ title: '', content: '', tags: [] })
+const draft = reactive({ title: '', content: '', tags: [], type: 'memo', done: false })
+
+/** 类型字典：列表标签 / 编辑区下拉共用 */
+const TYPE_OPTIONS = [
+  { value: 'memo', label: '备忘' },
+  { value: 'todo', label: '待办' },
+  { value: 'journal', label: '手记' },
+]
+const TYPE_LABEL = { memo: '备忘', todo: '待办', journal: '手记' }
+const TYPE_TAG = { todo: 'warning', journal: 'success' }
 
 const activeMemo = computed(() => memos.value.find(m => m.id === activeId.value) || null)
+
+const emptyText = computed(() => {
+  if (typeFilter.value === 'todo') return '还没有待办'
+  if (typeFilter.value === 'journal') return '还没有手记'
+  if (typeFilter.value === 'memo') return '还没有备忘'
+  return '还没有内容'
+})
 
 /** 已存在的标签合集，供编辑区下拉选择 */
 const allTags = computed(() => {
@@ -130,11 +186,12 @@ const allTags = computed(() => {
 
 const searchDebounce = debounce(loadMemos, 300)
 watch(keyword, searchDebounce)
+watch(typeFilter, loadMemos)
 
 async function loadMemos() {
   loading.value = true
   try {
-    const list = await listMemos(keyword.value)
+    const list = await listMemos({ keyword: keyword.value, type: typeFilter.value })
     memos.value = list
     // 当前选中的被删掉时，自动选中第一条
     if (activeId.value && !list.some(m => m.id === activeId.value)) {
@@ -160,6 +217,8 @@ async function selectMemo(id) {
     draft.title = memo.title
     draft.content = memo.content
     draft.tags = [...memo.tags]
+    draft.type = memo.type || 'memo'
+    draft.done = Boolean(memo.done)
   }
 }
 
@@ -174,6 +233,8 @@ async function saveDraft(silent = false) {
       title: draft.title.trim() || '无标题备忘',
       content: draft.content,
       tags: draft.tags,
+      type: draft.type,
+      done: draft.type === 'todo' ? Boolean(draft.done) : undefined,
     })
     // 用返回值替换列表项，保持排序（置顶在前、时间倒序）由 mock 端统一处理
     const idx = memos.value.findIndex(m => m.id === updated.id)
@@ -193,13 +254,27 @@ async function handleSave() {
 
 async function handleCreate() {
   if (dirty.value && activeId.value) await saveDraft(true)
-  const memo = await addMemo({})
+  // 新建条目跟随当前选中的类型 tab；「全部」时默认建备忘
+  const type = typeFilter.value || 'memo'
+  const memo = await addMemo({ type })
   activeId.value = memo.id
   draft.title = memo.title
   draft.content = memo.content
   draft.tags = []
+  draft.type = memo.type
+  draft.done = Boolean(memo.done)
   dirty.value = false
   await loadMemos()
+}
+
+/** 勾选/取消待办完成状态 */
+async function handleToggleDone(memo) {
+  try {
+    await updateMemo(memo.id, { done: !memo.done })
+    memo.done = !memo.done
+  } catch (err) {
+    ElMessage.error(err.message || '操作失败')
+  }
 }
 
 async function handleTogglePin(memo) {
@@ -208,7 +283,7 @@ async function handleTogglePin(memo) {
 }
 
 async function handleRemove() {
-  await ElMessageBox.confirm(`确定删除「${activeMemo.value.title}」吗？`, '删除备忘录', {
+  await ElMessageBox.confirm(`确定删除「${activeMemo.value.title}」吗？`, '删除内容', {
     type: 'warning',
   })
   await removeMemo(activeId.value)
@@ -250,6 +325,14 @@ onMounted(loadMemos)
   overflow: hidden;
 }
 
+.type-tabs {
+  margin-bottom: 10px;
+}
+
+.type-tabs :deep(.el-radio-button__inner) {
+  width: 62px;
+}
+
 .list-toolbar {
   display: flex;
   gap: 8px;
@@ -289,6 +372,24 @@ onMounted(loadMemos)
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+/* 待办勾选框：贴在标题前，不撑高条目 */
+.todo-check {
+  flex-shrink: 0;
+  height: auto;
+  margin-right: -2px;
+}
+
+.todo-check :deep(.el-checkbox__inner) {
+  width: 14px;
+  height: 14px;
+}
+
+/* 待办完成后：标题划线 + 整体弱化 */
+.memo-item.done .memo-item-title {
+  color: var(--hamifs-text-secondary);
+  text-decoration: line-through;
 }
 
 .memo-item-title {
@@ -383,6 +484,16 @@ onMounted(loadMemos)
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.editor-type {
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.editor-done {
+  flex-shrink: 0;
+  height: auto;
 }
 
 .editor-tags {
